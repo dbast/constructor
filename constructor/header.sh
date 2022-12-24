@@ -5,10 +5,12 @@
 # PLAT:  __PLAT__
 # MD5:   __MD5__
 
+set -eu
+
 #if osx
 unset DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH
 #else
-export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+export OLD_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 unset LD_LIBRARY_PATH
 #endif
 
@@ -67,11 +69,7 @@ Installs __NAME__ __VERSION__
 "
 
 if which getopt > /dev/null 2>&1; then
-    OPTS=$(getopt bifhkp:sut "$*" 2>/dev/null)
-    if [ ! $? ]; then
-        printf "%s\\n" "$USAGE"
-        exit 2
-    fi
+    OPTS=$(getopt bifhkp:sut "$@" || { printf "%s\\n" "$USAGE" >&2; exit 2; })
 
     eval set -- "$OPTS"
 
@@ -393,32 +391,32 @@ extract_range () {
     blk_siz=16384
     dd1_beg=$1
     dd3_end=$2
-    dd1_end=$(( ( $dd1_beg / $blk_siz + 1 ) * $blk_siz ))
-    dd1_cnt=$(( $dd1_end - $dd1_beg ))
-    dd2_end=$(( $dd3_end / $blk_siz ))
-    dd2_beg=$(( ( $dd1_end - 1 ) / $blk_siz + 1 ))
-    dd2_cnt=$(( $dd2_end - $dd2_beg ))
-    dd3_beg=$(( $dd2_end * $blk_siz ))
-    dd3_cnt=$(( $dd3_end - $dd3_beg ))
-    dd if="$THIS_PATH" bs=1 skip=$dd1_beg count=$dd1_cnt 2>/dev/null
-    dd if="$THIS_PATH" bs=$blk_siz skip=$dd2_beg count=$dd2_cnt 2>/dev/null
-    dd if="$THIS_PATH" bs=1 skip=$dd3_beg count=$dd3_cnt 2>/dev/null
+    dd1_end=$(( ( dd1_beg / blk_siz + 1 ) * blk_siz ))
+    dd1_cnt=$(( dd1_end - dd1_beg ))
+    dd2_end=$(( dd3_end / blk_siz ))
+    dd2_beg=$(( ( dd1_end - 1 ) / blk_siz + 1 ))
+    dd2_cnt=$(( dd2_end - dd2_beg ))
+    dd3_beg=$(( dd2_end * blk_siz ))
+    dd3_cnt=$(( dd3_end - dd3_beg ))
+    dd if="$THIS_PATH" bs=1 skip="${dd1_beg}" count="${dd1_cnt}" 2>/dev/null
+    dd if="$THIS_PATH" bs="${blk_siz}" skip="${dd2_beg}" count="${dd2_cnt}" 2>/dev/null
+    dd if="$THIS_PATH" bs=1 skip="${dd3_beg}" count="${dd3_cnt}" 2>/dev/null
 }
 
 # the line marking the end of the shell header and the beginning of the payload
 last_line=$(grep -anm 1 '^@@END_HEADER@@' "$THIS_PATH" | sed 's/:.*//')
 # the start of the first payload, in bytes, indexed from zero
-boundary0=$(head -n $last_line "$THIS_PATH" | wc -c | sed 's/ //g')
+boundary0=$(head -n "${last_line}" "${THIS_PATH}" | wc -c | sed 's/ //g')
 # the start of the second payload / the end of the first payload, plus one
-boundary1=$(( $boundary0 + __FIRST_PAYLOAD_SIZE__ ))
+boundary1=$(( boundary0 + __FIRST_PAYLOAD_SIZE__ ))
 # the end of the second payload, plus one
-boundary2=$(( $boundary1 + __SECOND_PAYLOAD_SIZE__ ))
+boundary2=$(( boundary1 + __SECOND_PAYLOAD_SIZE__ ))
 
 # verify the MD5 sum of the tarball appended to this header
 #if osx
-MD5=$(extract_range $boundary0 $boundary2 | md5)
+MD5=$(extract_range "${boundary0}" "${boundary2}" | md5)
 #else
-MD5=$(extract_range $boundary0 $boundary2 | md5sum -)
+MD5=$(extract_range "${boundary0}" "${boundary2}" | md5sum -)
 #endif
 
 if ! echo "$MD5" | grep __MD5__ >/dev/null; then
@@ -434,12 +432,12 @@ unset PYTHON_SYSCONFIGDATA_NAME _CONDA_PYTHON_SYSCONFIGDATA_NAME
 
 # the first binary payload: the standalone conda executable
 CONDA_EXEC="$PREFIX/conda.exe"
-extract_range $boundary0 $boundary1 > "$CONDA_EXEC"
+extract_range "${boundary0}" "${boundary1}" > "$CONDA_EXEC"
 chmod +x "$CONDA_EXEC"
 
-export TMP_BACKUP="$TMP"
-export TMP=$PREFIX/install_tmp
-mkdir -p $TMP
+export TMP_BACKUP="${TMP:-}"
+export TMP="${PREFIX}/install_tmp"
+mkdir -p "${TMP}"
 
 # the second binary payload: the tarball of packages
 printf "Unpacking payload ...\n"
@@ -494,16 +492,16 @@ CONDA_PKGS_DIRS="$PREFIX/pkgs" \
 rm -f "$PREFIX/pkgs/env.txt"
 
 #if has_conda
-mkdir -p $PREFIX/envs
-for env_pkgs in ${PREFIX}/pkgs/envs/*/; do
-    env_name=$(basename ${env_pkgs})
-    if [[ "${env_name}" == "*" ]]; then
+mkdir -p "${PREFIX}/envs"
+for env_pkgs in "${PREFIX}"/pkgs/envs/*/; do
+    env_name=$(basename "${env_pkgs}")
+    if [ "${env_name}" = "*" ]; then
         continue
     fi
-    printf "\nInstalling ${env_name} environment...\n\n"
+    printf "\nInstalling %s environment...\n\n" "${env_name}"
     mkdir -p "$PREFIX/envs/$env_name"
 
-    if [[ -f "${env_pkgs}channels.txt" ]]; then
+    if [ -f "${env_pkgs}channels.txt" ]; then
         env_channels=$(cat "${env_pkgs}channels.txt")
         rm -f "${env_pkgs}channels.txt"
     else
@@ -526,9 +524,9 @@ POSTCONDA="$PREFIX/postconda.tar.bz2"
 "$CONDA_EXEC" constructor --prefix "$PREFIX" --extract-tarball < "$POSTCONDA" || exit 1
 rm -f "$POSTCONDA"
 
-rm -f $PREFIX/conda.exe
+rm -f "${PREFIX}/conda.exe"
 
-rm -rf $PREFIX/install_tmp
+rm -rf "${PREFIX}/install_tmp"
 export TMP="$TMP_BACKUP"
 
 
@@ -560,20 +558,20 @@ if [ "$KEEP_PKGS" = "0" ]; then
 else
     # Attempt to delete the empty temporary directories in the package cache
     # These are artifacts of the constructor --extract-conda-pkgs
-    find $PREFIX/pkgs -type d -empty -exec rmdir {} \; 2>/dev/null || :
+    find "${PREFIX}/pkgs" -type d -empty -exec rmdir {} \; 2>/dev/null || :
 fi
 
 cat <<EOF
 __CONCLUSION_TEXT__
 EOF
 
-if [ "$PYTHONPATH" != "" ]; then
+if [ "${PYTHONPATH:-}" != "" ]; then
     printf "WARNING:\\n"
     printf "    You currently have a PYTHONPATH environment variable set. This may cause\\n"
     printf "    unexpected behavior when running the Python interpreter in __NAME__.\\n"
     printf "    For best results, please verify that your PYTHONPATH only points to\\n"
     printf "    directories of packages that are compatible with the Python interpreter\\n"
-    printf "    in __NAME__: $PREFIX\\n"
+    printf "    in __NAME__: %s\\n" "$PREFIX"
 fi
 
 if [ "$BATCH" = "0" ]; then
@@ -601,7 +599,7 @@ if [ "$BATCH" = "0" ]; then
         printf "You have chosen to not have conda modify your shell scripts at all.\\n"
         printf "To activate conda's base environment in your current shell session:\\n"
         printf "\\n"
-        printf "eval \"\$($PREFIX/bin/conda shell.YOUR_SHELL_NAME hook)\" \\n"
+        printf "eval \"\$(%s/bin/conda shell.YOUR_SHELL_NAME hook)\" \\n" "$PREFIX"
         printf "\\n"
         printf "To install conda's shell functions for easier access, first activate, then:\\n"
         printf "\\n"
@@ -609,13 +607,13 @@ if [ "$BATCH" = "0" ]; then
         printf "\\n"
     else
         case $SHELL in
-            *zsh) $PREFIX/bin/conda init zsh ;;
-            *) $PREFIX/bin/conda init ;;
+            *zsh) "${PREFIX}/bin/conda" init zsh ;;
+            *) "${PREFIX}/bin/conda" init ;;
         esac
         if [ -f "$PREFIX/bin/mamba" ]; then
             case $SHELL in
-                *zsh) $PREFIX/bin/mamba init zsh ;;
-                *) $PREFIX/bin/mamba init ;;
+                *zsh) "${PREFIX}/bin/mamba" init zsh ;;
+                *) "${PREFIX}/bin/mamba" init ;;
             esac
         fi
     fi
@@ -633,7 +631,9 @@ fi # !BATCH
 #if has_conda
 if [ "$TEST" = "1" ]; then
     printf "INFO: Running package tests in a subshell\\n"
-    (. "$PREFIX"/bin/activate
+    NFAILS=0
+    (# shellcheck disable=SC1091
+     . "$PREFIX"/bin/activate
      which conda-build > /dev/null 2>&1 || conda install -y conda-build
      if [ ! -d "$PREFIX"/conda-bld/__PLAT__ ]; then
          mkdir -p "$PREFIX"/conda-bld/__PLAT__
@@ -645,8 +645,7 @@ if [ "$TEST" = "1" ]; then
      fi
      conda index "$PREFIX"/conda-bld/__PLAT__/
      conda-build --override-channels --channel local --test --keep-going "$PREFIX"/conda-bld/__PLAT__/*.tar.bz2
-    )
-    NFAILS=$?
+    ) || NFAILS=$?
     if [ "$NFAILS" != "0" ]; then
         if [ "$NFAILS" = "1" ]; then
             printf "ERROR: 1 test failed\\n" >&2

@@ -39,6 +39,7 @@ def _execute(cmd):
     t1 = time.time()
     errored = p.returncode != 0
     if errored:
+        print(f'--- RETURNCODE: {p.returncode} ---')
         if stdout:
             print('--- STDOUT ---')
             print(stdout)
