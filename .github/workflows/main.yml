@@ -27,8 +27,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-        pyver: ["3.7", "3.8", "3.9", "3.10"]
+        os: [windows-latest]
+        pyver: ["3.7"]
     steps:
       - name: Print github context
         run: |

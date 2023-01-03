@@ -1163,32 +1163,32 @@ Section "Uninstall"
 
     # our newest Python builds have a patch that allows us to control the PATH search stuff much more
     #   carefully.  More info at https://docs.conda.io/projects/conda/en/latest/user-guide/troubleshooting.html#solution
-    System::Call 'kernel32::SetEnvironmentVariable(t,t)i("CONDA_DLL_SEARCH_MODIFICATION_ENABLE", "1").r0'
+    #System::Call 'kernel32::SetEnvironmentVariable(t,t)i("CONDA_DLL_SEARCH_MODIFICATION_ENABLE", "1").r0'
 
     # Extra info for pre_uninstall scripts
-    System::Call 'kernel32::SetEnvironmentVariable(t,t)i("PREFIX", "$INSTDIR").r0'
-    System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_NAME", "${NAME}").r0'
-    System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_VER", "${VERSION}").r0'
-    System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_PLAT", "${PLATFORM}").r0'
-    System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_TYPE", "EXE").r0'
+    #System::Call 'kernel32::SetEnvironmentVariable(t,t)i("PREFIX", "$INSTDIR").r0'
+    #System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_NAME", "${NAME}").r0'
+    #System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_VER", "${VERSION}").r0'
+    #System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_PLAT", "${PLATFORM}").r0'
+    #System::Call 'kernel32::SetEnvironmentVariable(t,t)i("INSTALLER_TYPE", "EXE").r0'
 
-    !insertmacro AbortRetryNSExecWaitLibNsisCmd "pre_uninstall"
-    !insertmacro AbortRetryNSExecWaitLibNsisCmd "rmpath"
-    !insertmacro AbortRetryNSExecWaitLibNsisCmd "rmreg"
+    #!insertmacro AbortRetryNSExecWaitLibNsisCmd "pre_uninstall"
+    #!insertmacro AbortRetryNSExecWaitLibNsisCmd "rmpath"
+    #!insertmacro AbortRetryNSExecWaitLibNsisCmd "rmreg"
     
-    DetailPrint "Removing files and folders..."
-    nsExec::Exec 'cmd.exe /D /C RMDIR /Q /S "$INSTDIR"'
+    #DetailPrint "Removing files and folders..."
+    #nsExec::Exec 'cmd.exe /D /C RMDIR /Q /S "$INSTDIR"'
 
     # In case the last command fails, run the slow method to remove leftover
-    RMDir /r /REBOOTOK "$INSTDIR"
+    #RMDir /r /REBOOTOK "$INSTDIR"
 
-    DeleteRegKey SHCTX "${UNINSTREG}"
+    #DeleteRegKey SHCTX "${UNINSTREG}"
     # If Anaconda was registered as the official Python for this version,
     # remove it from the registry
-    ReadRegStr $0 SHCTX "Software\Python\PythonCore\${PY_VER}\InstallPath" ""
-    ${If} $0 == "$INSTDIR"
-        DeleteRegKey SHCTX "Software\Python\PythonCore\${PY_VER}"
-    ${EndIf}
+    #ReadRegStr $0 SHCTX "Software\Python\PythonCore\${PY_VER}\InstallPath" ""
+    #${If} $0 == "$INSTDIR"
+    #    DeleteRegKey SHCTX "Software\Python\PythonCore\${PY_VER}"
+    #${EndIf}
 SectionEnd
 
 !if '@SIGNTOOL_COMMAND@' != ''
