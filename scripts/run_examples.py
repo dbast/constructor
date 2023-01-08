@@ -186,9 +186,9 @@ def run_examples(keep_artifacts=None):
                         # waited; otherwise, since the uninstaller copies itself to a different location
                         # so it can be auto-deleted, it returns immediately and it gives us problems with
                         # the tempdir cleanup later
-                        f"/S _?={env_dir}"
+                        f'/S _?="{env_dir}"'
                     ]
-                    _execute(cmd)
+                    errored += _execute(cmd)
                     paths_after_uninstall = os.listdir(env_dir)
                     if len(paths_after_uninstall) > 2:
                         # The debug installer writes to install.log too, which will only
