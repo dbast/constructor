@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -euxo pipefail
 
 echo '## Hello from Post_install script ' > "$HOME/postinstall.txt"
 printenv >> "$HOME/postinstall.txt"
