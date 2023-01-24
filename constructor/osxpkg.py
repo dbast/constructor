@@ -50,6 +50,7 @@ def write_readme(dst, info):
                 continue
             f.write("{\\listtext\t\n\\f1 \\uc0\\u8259 \n\\f0 \t}%s %s\\\n" %
                     tuple(dist.rsplit('-', 2)[:2]))
+        f.write(f"\n\\pard\\pardeftab720\\partightenfactor0\n\\cf0 \\\nCreated by constructor {info['CONSTRUCTOR_VERSION']}\\\n")
         f.write('}')
 
 
