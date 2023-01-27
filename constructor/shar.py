@@ -4,6 +4,7 @@
 # constructor is distributed under the terms of the BSD 3-clause license.
 # Consult LICENSE.txt or http://opensource.org/licenses/BSD-3-Clause.
 
+import json
 import logging
 import os
 import shutil
@@ -91,6 +92,7 @@ def get_header(conda_exec, tarball, info):
         replace['LICENSE'] = read_ascii_only(info['license_file'])
 
     data = read_header_template()
+    logger.info("Preprocessing header.sh with \n%s", json.dumps(ppd, sort_keys=True, indent=4))
     data = preprocess(data, ppd)
     data = fill_template(data, replace)
 

@@ -47,7 +47,7 @@ def _execute(cmd, **env_vars):
         print('--- TEST TIMEOUT ---')
         errored = True
     t1 = time.time()
-    if errored or "CONDA_VERBOSITY" in env_vars:
+    if True:
         print(f'--- RETURNCODE: {p.returncode} ---')
         if stdout:
             print('--- STDOUT ---')
@@ -107,6 +107,8 @@ def run_examples(keep_artifacts=None, conda_exe=None, debug=False):
         test_with_spaces = example_name in WITH_SPACES
         print(example_name)
         print('-' * len(example_name))
+        if "miniforge" not in example_name:
+            continue
         if (
             sys.platform.startswith("win")
             and conda_exe

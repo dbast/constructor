@@ -622,4 +622,5 @@ fi
 #endif
 
 exit 0
+# shellcheck disable=SC2317
 @@END_HEADER@@
